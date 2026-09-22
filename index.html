@@ -34,7 +34,6 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
-
   padding: 8px 16px;
 
   background: #0d1015;
@@ -106,7 +105,6 @@ body {
 
 #state {
   margin: 0;
-
   text-align: center;
 
   font-size: 24px;
@@ -117,7 +115,6 @@ body {
 
 #det {
   margin-top: 7px;
-
   text-align: center;
 
   color: #7f8997;
@@ -135,7 +132,6 @@ body {
 
 #cache {
   margin-top: 6px;
-
   min-height: 20px;
 
   text-align: center;
@@ -186,7 +182,7 @@ body {
 }
 
 #progressBar {
-  width: 35%;
+  width: 0%;
   height: 100%;
 
   background: #7fd0a0;
@@ -195,7 +191,6 @@ body {
   transition: width .25s ease;
 }
 
-/* Animated state while checking/downloading */
 body.loading #progressBar {
   animation: progressPulse 1.6s ease-in-out infinite;
 }
@@ -223,7 +218,6 @@ body.loading #progressBar {
   grid-template-columns: 1fr 1fr;
 
   gap: 12px;
-
   margin-top: 22px;
 }
 
@@ -249,39 +243,60 @@ body.loading #progressBar {
 
 .infoValue {
   color: #cbd3de;
-
   font-size: 13px;
 }
 
 /* =========================
-   MESSAGES
+   ACTION
    ========================= */
 
 #action {
   display: none;
 
-  margin-top: 20px;
-  padding: 14px 16px;
+  margin-top: 22px;
+  padding: 17px 16px;
 
   text-align: center;
 
   background: #121820;
 
-  border: 1px solid #26313d;
-  border-radius: 7px;
+  border: 1px solid #394756;
+  border-radius: 8px;
 
   color: #d8c07f;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background .15s ease,
+    border-color .15s ease,
+    transform .1s ease;
 }
 
 #action::after {
   content: "  •  Press X or tap the screen";
+  display: block;
+
+  margin-top: 4px;
+
   color: #687382;
   font-size: 12px;
+  font-weight: 400;
+}
+
+#action:hover {
+  background: #171e27;
+  border-color: #526171;
+}
+
+#action:active {
+  transform: scale(.985);
 }
 
 /* =========================
-   SUCCESS
+   SUCCESS / READY
    ========================= */
 
 body.success #statusIcon {
@@ -318,7 +333,7 @@ body.warning #action {
 }
 
 /* =========================
-   ERROR
+   ERROR / BLOCKED
    ========================= */
 
 body.error #statusIcon {
@@ -332,6 +347,10 @@ body.error #state {
 body.error #progressBar {
   background: #d08a7f;
   animation: none;
+}
+
+body.error #action {
+  display: none;
 }
 
 /* =========================
@@ -381,7 +400,6 @@ body.error #progressBar {
 <div id="brand">
 
   <!-- KEEP YOUR EXISTING BASE64 LOGO IMAGE EXACTLY HERE -->
-  <!-- Replace this entire img element with the one from your current index.html -->
 
   <img
     src="data:image/png;base64,PASTE-YOUR-EXISTING-BASE64-IMAGE-HERE"
@@ -447,7 +465,9 @@ body.error #progressBar {
 
     </div>
 
-    <div id="action"></div>
+    <div id="action">
+      READY — START
+    </div>
 
   </div>
 
@@ -456,38 +476,67 @@ body.error #progressBar {
 <script>
 (function () {
 
-    var stateEl = document.getElementById("state");
-    var detEl = document.getElementById("det");
-    var cacheEl = document.getElementById("cache");
+    var stateEl =
+        document.getElementById("state");
 
-    var progressBar = document.getElementById("progressBar");
-    var progressPercent = document.getElementById("progressPercent");
-    var firmwareValue = document.getElementById("firmwareValue");
+    var detEl =
+        document.getElementById("det");
+
+    var cacheEl =
+        document.getElementById("cache");
+
+    var progressBar =
+        document.getElementById("progressBar");
+
+    var progressPercent =
+        document.getElementById("progressPercent");
+
+    var firmwareValue =
+        document.getElementById("firmwareValue");
+
+    var actionEl =
+        document.getElementById("action");
 
     function setState(t, c) {
+
         stateEl.textContent = t;
         stateEl.className = c || "";
     }
 
     function setCache(t, ok) {
+
         cacheEl.textContent = t;
-        cacheEl.className = ok ? "cacheok" : "";
+        cacheEl.className =
+            ok ? "cacheok" : "";
     }
 
     function setProgress(value, text) {
+
         if (typeof value === "number") {
-            value = Math.max(0, Math.min(100, value));
 
-            progressBar.style.width = value + "%";
-            progressBar.style.transform = "none";
+            value = Math.max(
+                0,
+                Math.min(100, value)
+            );
 
-            progressPercent.textContent = Math.round(value) + "%";
+            progressBar.style.width =
+                value + "%";
+
+            progressBar.style.transform =
+                "none";
+
+            progressPercent.textContent =
+                Math.round(value) + "%";
+
         } else {
-            progressPercent.textContent = text || "CHECKING";
+
+            progressPercent.textContent =
+                text || "CHECKING";
         }
     }
 
     function setMode(mode) {
+
         document.body.classList.remove(
             "loading",
             "success",
@@ -500,12 +549,16 @@ body.error #progressBar {
         }
     }
 
-    var params = new URLSearchParams(location.search);
-
     /*
-     * Firmwares this build has a MEASURED kernel table for.
-     * This remains UX-only. jb.js performs its own checks.
+     * =========================
+     * FIRMWARE TABLE
+     * =========================
+     *
+     * Only firmware versions explicitly
+     * listed here are permitted through
+     * the launcher UI.
      */
+
     var SUPPORTED = {
         1302: 1,
         1304: 1,
@@ -516,32 +569,46 @@ body.error #progressBar {
     var key = null;
     var fwnum = null;
 
-    var m = /PlayStation\s+4[\/ ](\d+)\.(\d+)/.exec(
-        navigator.userAgent
-    );
+    /*
+     * Detect PS4 firmware from the
+     * PlayStation user-agent.
+     */
+
+    var m =
+        /PlayStation\s+4[\/ ](\d+)\.(\d+)/
+        .exec(navigator.userAgent);
 
     if (m) {
 
-        var ms = parseInt(m[2], 16).toString(16);
+        var ms =
+            parseInt(m[2], 16)
+            .toString(16);
 
         if (ms.length < 2) {
             ms = "0" + ms;
         }
 
-        key = m[1] + "." + ms;
+        key =
+            m[1] + "." + ms;
 
         fwnum =
             parseInt(m[1], 10) * 100 +
             parseInt(ms, 10);
     }
 
-    firmwareValue.textContent = key || "Unknown";
+    firmwareValue.textContent =
+        key || "Unknown";
 
-    var forced = params.get("force") === "1";
+    /*
+     * NO force=1 bypass.
+     *
+     * Firmware must be detected and
+     * explicitly present in SUPPORTED.
+     */
 
     var supported =
-        forced ||
-        (fwnum !== null && SUPPORTED[fwnum] === 1);
+        fwnum !== null &&
+        SUPPORTED[fwnum] === 1;
 
     detEl.innerHTML =
         "firmware <b>" +
@@ -550,10 +617,20 @@ body.error #progressBar {
         (
             supported
             ? " &middot; <b>supported</b>"
-            : " &middot; not in this build's kernel table"
+            : " &middot; <b>blocked</b>"
         );
 
-    var target = "jb.html" + location.search;
+    var target =
+        "jb.html" + location.search;
+
+    /*
+     * =========================
+     * START
+     * =========================
+     *
+     * This function is ONLY reached
+     * following explicit user input.
+     */
 
     function go() {
 
@@ -564,15 +641,24 @@ body.error #progressBar {
             "warn"
         );
 
-        setProgress(100, "READY");
+        setProgress(
+            100,
+            "STARTING"
+        );
 
         setCache(
-            "cache ready",
+            "starting...",
             true
         );
 
         location.replace(target);
     }
+
+    /*
+     * =========================
+     * WAIT FOR USER
+     * =========================
+     */
 
     function waitForTap(msg, action) {
 
@@ -583,9 +669,44 @@ body.error #progressBar {
             "warn"
         );
 
-        setProgress(null, "WAITING");
+        actionEl.textContent =
+            "READY — START";
+
+        setProgress(
+            100,
+            "READY"
+        );
+
+        var fired = false;
 
         function fire() {
+
+            if (fired) {
+                return;
+            }
+
+            fired = true;
+
+            window.removeEventListener(
+                "click",
+                fire
+            );
+
+            actionEl.removeEventListener(
+                "click",
+                fire
+            );
+
+            action();
+        }
+
+        function keyHandler(e) {
+
+            if (fired) {
+                return;
+            }
+
+            fired = true;
 
             window.removeEventListener(
                 "click",
@@ -594,7 +715,7 @@ body.error #progressBar {
 
             window.removeEventListener(
                 "keydown",
-                fire
+                keyHandler
             );
 
             action();
@@ -607,50 +728,121 @@ body.error #progressBar {
 
         window.addEventListener(
             "keydown",
+            keyHandler
+        );
+
+        actionEl.addEventListener(
+            "click",
             fire
         );
     }
 
     /*
-     * Unsupported firmware
+     * =========================
+     * UNKNOWN FIRMWARE
+     * =========================
+     *
+     * Unknown firmware is completely
+     * blocked. There is no bypass.
      */
 
-    if (!supported) {
+    if (
+        key === null ||
+        fwnum === null
+    ) {
 
-        setMode("warning");
+        setMode("error");
 
         setState(
-            "UNSUPPORTED FIRMWARE",
+            "FIRMWARE UNKNOWN",
             "bad"
+        );
+
+        setCache(
+            "unable to detect PlayStation 4 firmware"
         );
 
         setProgress(
             0,
-            "UNSUPPORTED"
+            "BLOCKED"
         );
 
-        waitForTap(
-            "UNSUPPORTED (" +
-            (key || "unknown") +
-            ") — run anyway?",
-            go
-        );
+        actionEl.style.display =
+            "none";
 
         return;
     }
 
     /*
-     * Supported firmware
+     * =========================
+     * UNSUPPORTED FIRMWARE
+     * =========================
+     *
+     * Known but unlisted firmware is
+     * completely blocked.
      */
 
-    var ac = window.applicationCache;
+    if (!supported) {
+
+        setMode("error");
+
+        setState(
+            "FIRMWARE NOT SUPPORTED",
+            "bad"
+        );
+
+        setCache(
+            "firmware " +
+            key +
+            " is not supported by this build"
+        );
+
+        setProgress(
+            0,
+            "BLOCKED"
+        );
+
+        actionEl.style.display =
+            "none";
+
+        return;
+    }
+
+    /*
+     * =========================
+     * SUPPORTED FIRMWARE
+     * =========================
+     *
+     * From here onward, the launcher
+     * waits for explicit user input.
+     */
+
+    var ac =
+        window.applicationCache;
+
+    /*
+     * No application cache available.
+     */
 
     if (
         !ac ||
-        !document.documentElement.hasAttribute("manifest")
+        !document.documentElement
+            .hasAttribute("manifest")
     ) {
 
-        go();
+        setCache(
+            "cache unavailable — ready",
+            true
+        );
+
+        waitForTap(
+            "READY — press X or tap to start",
+            go
+        );
+
+    /*
+     * Offline.
+     */
 
     } else if (!navigator.onLine) {
 
@@ -664,9 +856,18 @@ body.error #progressBar {
             "CACHED"
         );
 
-        go();
+        waitForTap(
+            "READY — press X or tap to start",
+            go
+        );
 
-    } else if (ac.status === ac.IDLE) {
+    /*
+     * Already cached.
+     */
+
+    } else if (
+        ac.status === ac.IDLE
+    ) {
 
         setCache(
             "cached",
@@ -678,9 +879,18 @@ body.error #progressBar {
             "READY"
         );
 
-        go();
+        waitForTap(
+            "READY — press X or tap to start",
+            go
+        );
 
-    } else if (ac.status === ac.UPDATEREADY) {
+    /*
+     * Update already downloaded.
+     */
+
+    } else if (
+        ac.status === ac.UPDATEREADY
+    ) {
 
         try {
             ac.swapCache();
@@ -697,11 +907,15 @@ body.error #progressBar {
         );
 
         waitForTap(
-            "UPDATE READY — reload to run",
+            "UPDATE READY — press X or tap to reload",
             function () {
                 location.reload();
             }
         );
+
+    /*
+     * Cache is being checked/downloaded.
+     */
 
     } else {
 
@@ -734,11 +948,17 @@ body.error #progressBar {
             "progress",
             function (e) {
 
-                if (e && e.total) {
+                if (
+                    e &&
+                    e.total
+                ) {
 
                     var pct =
                         Math.round(
-                            (e.loaded / e.total) * 100
+                            (
+                                e.loaded /
+                                e.total
+                            ) * 100
                         );
 
                     setCache(
@@ -756,6 +976,12 @@ body.error #progressBar {
             false
         );
 
+        /*
+         * First cache completed.
+         *
+         * WAIT — DO NOT AUTO START.
+         */
+
         ac.addEventListener(
             "cached",
             function () {
@@ -767,16 +993,20 @@ body.error #progressBar {
 
                 setProgress(
                     100,
-                    "100%"
+                    "READY"
                 );
 
                 waitForTap(
-                    "CACHED — ready to run",
+                    "READY — press X or tap to start",
                     go
                 );
             },
             false
         );
+
+        /*
+         * New update downloaded.
+         */
 
         ac.addEventListener(
             "updateready",
@@ -797,7 +1027,7 @@ body.error #progressBar {
                 );
 
                 waitForTap(
-                    "UPDATE READY — reload to run",
+                    "UPDATE READY — press X or tap to reload",
                     function () {
                         location.reload();
                     }
@@ -805,6 +1035,12 @@ body.error #progressBar {
             },
             false
         );
+
+        /*
+         * No update required.
+         *
+         * WAIT — DO NOT AUTO START.
+         */
 
         ac.addEventListener(
             "noupdate",
@@ -820,10 +1056,17 @@ body.error #progressBar {
                     "READY"
                 );
 
-                go();
+                waitForTap(
+                    "READY — press X or tap to start",
+                    go
+                );
             },
             false
         );
+
+        /*
+         * Cache failure.
+         */
 
         ac.addEventListener(
             "error",
@@ -841,12 +1084,16 @@ body.error #progressBar {
                 );
 
                 waitForTap(
-                    "CACHE FAILED — run anyway",
+                    "CACHE FAILED — run anyway?",
                     go
                 );
             },
             false
         );
+
+        /*
+         * Cache obsolete.
+         */
 
         ac.addEventListener(
             "obsolete",
@@ -864,7 +1111,7 @@ body.error #progressBar {
                 );
 
                 waitForTap(
-                    "CACHE OBSOLETE — run anyway",
+                    "CACHE OBSOLETE — run anyway?",
                     go
                 );
             },
