@@ -368,7 +368,60 @@ body.error #action {
 .warn {
   color: #d8c07f;
 }
+/* =========================
+   DIAGNOSTIC LOG VIEWER
+   ========================= */
 
+#diagnosticTools {
+  margin-top: 18px;
+}
+
+#diagnosticTools button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 14px;
+
+  background: #11161d;
+  border: 1px solid #2b3541;
+  border-radius: 7px;
+
+  color: #aeb8c6;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+
+  cursor: pointer;
+}
+
+#diagnosticTools button:hover {
+  background: #171e27;
+  border-color: #526171;
+}
+
+#diagnosticOutput {
+  display: none;
+
+  width: 100%;
+  max-height: 420px;
+  overflow: auto;
+
+  margin: 12px 0 0;
+  padding: 13px;
+
+  background: #080a0d;
+  border: 1px solid #202832;
+  border-radius: 7px;
+
+  color: #aeb8c6;
+
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  text-align: left;
+}
 /* =========================
    MOBILE
    ========================= */
@@ -469,6 +522,19 @@ body.error #action {
       READY — START
     </div>
 
+    <div id="diagnosticTools" onclick="event.stopPropagation()">
+
+      <button id="viewLog" type="button">
+        VIEW PREVIOUS LOG
+      </button>
+
+      <button id="clearLog" type="button">
+        CLEAR SAVED LOG
+      </button>
+
+      <pre id="diagnosticOutput"></pre>
+
+    </div>
   </div>
 
 </div>
@@ -1118,6 +1184,186 @@ body.error #action {
             false
         );
     }
+
+})();
+
+/*
+ * =========================
+ * PREVIOUS DIAGNOSTIC LOG
+ * =========================
+ *
+ * Reads the diagnostic data saved by jb.js.
+ *
+ * IMPORTANT:
+ * This does NOT load jb.js.
+ * This does NOT start the exploit.
+ * This does NOT modify the launcher logic.
+ */
+
+(function () {
+
+    var viewLog =
+        document.getElementById("viewLog");
+
+    var clearLog =
+        document.getElementById("clearLog");
+
+    var output =
+        document.getElementById("diagnosticOutput");
+
+    if (!viewLog || !clearLog || !output) {
+        return;
+    }
+
+    function readLogs() {
+
+        try {
+
+            var raw =
+                localStorage.getItem(
+                    "PS4JB_DIAGNOSTICS"
+                );
+
+            if (!raw) {
+                return [];
+            }
+
+            var logs =
+                JSON.parse(raw);
+
+            if (!Array.isArray(logs)) {
+                return [];
+            }
+
+            return logs;
+
+        } catch (e) {
+
+            return [];
+        }
+    }
+
+    function showLogs() {
+
+        var logs = readLogs();
+
+        output.style.display = "block";
+
+        if (!logs.length) {
+
+            output.textContent =
+                "No saved diagnostic log found.\n\n" +
+                "The log viewer is working, but no " +
+                "PS4JB_DIAGNOSTICS data exists yet.";
+
+            return;
+        }
+
+        var runs = {};
+
+        logs.forEach(function (item) {
+
+            var run =
+                item.run || "UNKNOWN RUN";
+
+            if (!runs[run]) {
+                runs[run] = [];
+            }
+
+            runs[run].push(item);
+        });
+
+        var runIds =
+            Object.keys(runs);
+
+        /*
+         * Newest run first.
+         */
+
+        runIds.reverse();
+
+        var text = "";
+
+        runIds.forEach(function (runId, index) {
+
+            text +=
+                "============================================================\n";
+
+            text +=
+                "RUN " +
+                (index + 1) +
+                "\n";
+
+            text +=
+                runId +
+                "\n";
+
+            text +=
+                "============================================================\n";
+
+            runs[runId].forEach(function (item) {
+
+                text +=
+                    "[" +
+                    (item.time || "unknown time") +
+                    "] " +
+                    (item.entry || "") +
+                    "\n";
+            });
+
+            text += "\n";
+        });
+
+        output.textContent = text;
+    }
+
+    viewLog.addEventListener(
+        "click",
+        function (event) {
+
+            /*
+             * VERY IMPORTANT:
+             * Prevent the launcher's page-wide
+             * click handler from seeing this click.
+             */
+
+            event.stopPropagation();
+
+            showLogs();
+        }
+    );
+
+    clearLog.addEventListener(
+        "click",
+        function (event) {
+
+            /*
+             * Do not allow this click to reach
+             * the launcher start handler.
+             */
+
+            event.stopPropagation();
+
+            try {
+
+                localStorage.removeItem(
+                    "PS4JB_DIAGNOSTICS"
+                );
+
+                output.style.display = "block";
+
+                output.textContent =
+                    "Saved diagnostic log cleared.";
+
+            } catch (e) {
+
+                output.style.display = "block";
+
+                output.textContent =
+                    "Unable to clear diagnostic log.";
+            }
+        }
+    );
 
 })();
 </script>
