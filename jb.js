@@ -56,6 +56,9 @@ function finishUI(ok) {
 let diagnosticSequence = 0;
 const diagnosticStartedAt = performance.now();
 
+const diagnosticRunId =
+  new Date().toISOString() + "-" + Math.random().toString(36).slice(2, 8);
+
 function mark(tag, detail) {
   diagnosticSequence++;
 
@@ -64,7 +67,27 @@ function mark(tag, detail) {
     ((performance.now() - diagnosticStartedAt) / 1000).toFixed(3);
 
   tag = "#" + diagnosticSequence + " +" + elapsed + "s " + tag;
+  try {
+    const entry =
+      tag + (detail == null || detail === "" ? "" : "  " + terse(detail));
 
+    const previous =
+      JSON.parse(localStorage.getItem("PS4JB_DIAGNOSTICS") || "[]");
+
+    previous.push({
+      run: diagnosticRunId,
+      time: new Date().toISOString(),
+      entry: entry,
+    });
+
+    // Keep the most recent 500 entries.
+    localStorage.setItem(
+      "PS4JB_DIAGNOSTICS",
+      JSON.stringify(previous.slice(-500)),
+    );
+  } catch (e) {
+    // Diagnostics must never interfere with the exploit.
+  }
   const raw = detail;
   detail = terse(detail);
   lines.push(tag + (detail == null || detail === "" ? "" : "  " + detail));
