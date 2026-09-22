@@ -53,7 +53,18 @@ function finishUI(ok) {
   if (SHOW_LOG || !document.body) return;
   document.body.className = ok ? "done" : "fail";
 }
+let diagnosticSequence = 0;
+const diagnosticStartedAt = performance.now();
+
 function mark(tag, detail) {
+  diagnosticSequence++;
+
+  const elapsed =
+
+    ((performance.now() - diagnosticStartedAt) / 1000).toFixed(3);
+
+  tag = "#" + diagnosticSequence + " +" + elapsed + "s " + tag;
+
   const raw = detail;
   detail = terse(detail);
   lines.push(tag + (detail == null || detail === "" ? "" : "  " + detail));
@@ -85,7 +96,11 @@ function trace(tag, detail) {
   else post(tag, detail);
 }
 function state(t, c) {
+  const timestamp = new Date().toISOString();
+  console.log("[PS4JB STATE]", timestamp, t);
+
   if (!SHOW_LOG || !stateEl) return;
+
   stateEl.textContent = t;
   stateEl.className = c || "";
 }
