@@ -541,58 +541,10 @@ body.error #action {
 
 <script>
 (function () {
+
     var diagnosticRun =
-    "RUN-" + new Date().toISOString();
+        "RUN-" + new Date().toISOString();
 
-function saveLocalDiagnostic(entry) {
-    try {
-        var key = "PS4JB_DIAGNOSTICS";
-        var logs = [];
-
-        var raw = localStorage.getItem(key);
-
-        if (raw) {
-            try {
-                var parsed = JSON.parse(raw);
-
-                if (Array.isArray(parsed)) {
-                    logs = parsed;
-                }
-            } catch (e) {
-                logs = [];
-            }
-        }
-
-        logs.push({
-            run: diagnosticRun,
-            time: new Date().toISOString(),
-            entry: entry
-        });
-
-        if (logs.length > 200) {
-            logs = logs.slice(logs.length - 200);
-        }
-
-        localStorage.setItem(
-            key,
-            JSON.stringify(logs)
-        );
-
-        return true;
-
-    } catch (e) {
-        console.log(
-            "[PS4JB13] Local diagnostic failed:",
-            e
-        );
-
-        return false;
-    }
-}
-
-saveLocalDiagnostic(
-    "PS4JB13 launcher JavaScript started"
-);
     var DIAGNOSTIC_ENDPOINT =
         "https://ps4jb13-diagnostics.samstanwell234.workers.dev/";
 
@@ -607,26 +559,69 @@ saveLocalDiagnostic(
                     "Content-Type": "application/json"
                 },
 
-                body: JSON.stringify(data)
+                body: JSON.stringify({
 
-         }).then(function (response) {
+                    source: "PS4JB13",
 
-                 if (!response.ok) {
+                    event: "launcher_diagnostic",
+
+                    run:
+                        data.run ||
+                        diagnosticRun,
+
+                    time:
+                        data.time ||
+                        new Date().toISOString(),
+
+                    entry:
+                        data.entry ||
+                        "",
+
+                    firmware:
+                        typeof key !== "undefined"
+                        ? key
+                        : null,
+
+                    firmwareNumber:
+                        typeof fwnum !== "undefined"
+                        ? fwnum
+                        : null,
+
+                    supported:
+                        typeof supported !== "undefined"
+                        ? supported
+                        : null,
+
+                    online:
+                        navigator.onLine,
+
+                    pathname:
+                        location.pathname
+
+                })
+
+            })
+            .then(function (response) {
+
+                if (!response.ok) {
+
                     throw new Error(
                         "HTTP " + response.status
                     );
                 }
 
-            return response.json();
+                return response.json();
 
-        }).then(function (result) {
+            })
+            .then(function (result) {
 
                 console.log(
                     "[PS4JB13] Remote diagnostic:",
                     result
                 );
 
-            }).catch(function (error) {
+            })
+            .catch(function (error) {
 
                 console.log(
                     "[PS4JB13] Remote diagnostic failed:",
@@ -643,6 +638,86 @@ saveLocalDiagnostic(
             );
         }
     }
+
+
+    function saveLocalDiagnostic(entry) {
+
+        try {
+
+            var storageKey =
+                "PS4JB_DIAGNOSTICS";
+
+            var logs = [];
+
+            var raw =
+                localStorage.getItem(storageKey);
+
+            if (raw) {
+
+                try {
+
+                    var parsed =
+                        JSON.parse(raw);
+
+                    if (Array.isArray(parsed)) {
+                        logs = parsed;
+                    }
+
+                } catch (e) {
+
+                    logs = [];
+                }
+            }
+
+            var record = {
+
+                run: diagnosticRun,
+
+                time:
+                    new Date().toISOString(),
+
+                entry: entry
+            };
+
+            logs.push(record);
+
+            if (logs.length > 200) {
+
+                logs =
+                    logs.slice(
+                        logs.length - 200
+                    );
+            }
+
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify(logs)
+            );
+
+            /*
+             * Send the same diagnostic event
+             * to the remote logging endpoint.
+             */
+
+            sendRemoteDiagnostic(record);
+
+            return true;
+
+        } catch (e) {
+
+            console.log(
+                "[PS4JB13] Local diagnostic failed:",
+                e
+            );
+
+            return false;
+        }
+    }
+
+
+    saveLocalDiagnostic(
+        "PS4JB13 launcher JavaScript started"
+    );
     var stateEl =
         document.getElementById("state");
 
@@ -772,29 +847,7 @@ saveLocalDiagnostic(
 /*
  * Send ONE diagnostic request.
  */
-sendRemoteDiagnostic({
-    source: "PS4JB13",
-    event: "launcher_loaded",
 
-    firmware: key || null,
-    firmwareNumber: fwnum,
-    supported: supported,
-
-    online: navigator.onLine,
-    language: navigator.language || null,
-
-    screen: {
-        width: window.screen.width,
-        height: window.screen.height
-    },
-
-    location: {
-        pathname: location.pathname,
-        search: location.search
-    },
-
-    timestamp: new Date().toISOString()
-});
 detEl.innerHTML =
     "firmware <b>" +
     (key || "unknown") +
@@ -822,26 +875,33 @@ firmwareValue.textContent =
 
     function go() {
 
-        setMode("success");
+    saveLocalDiagnostic(
+        "START requested by user"
+    );
 
-        setState(
-            "loading jailbreak...",
-            "warn"
-        );
+    setMode("success");
 
-        setProgress(
-            100,
-            "STARTING"
-        );
+    setState(
+        "loading jailbreak...",
+        "warn"
+    );
 
-        setCache(
-            "starting...",
-            true
-        );
+    setProgress(
+        100,
+        "STARTING"
+    );
 
-        location.replace(target);
-    }
+    setCache(
+        "starting...",
+        true
+    );
 
+    saveLocalDiagnostic(
+        "Navigating to " + target
+    );
+
+    location.replace(target);
+}
     /*
      * =========================
      * WAIT FOR USER
