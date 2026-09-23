@@ -284,6 +284,25 @@
           monospace;
       }
 
+      #outputView {
+        height: 260px;
+        margin: 0;
+        padding: 12px;
+
+        overflow-y: auto;
+
+        background: #090c10;
+        color: #9ba6b5;
+
+        font:
+          12px/1.55 Consolas,
+          "SFMono-Regular",
+          monospace;
+
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
       /* =========================
          FAILURE
          ========================= */
@@ -395,7 +414,8 @@
           grid-template-columns: 1fr;
         }
 
-        #out {
+        #out,
+        #outputView {
           height: 220px;
         }
       }
@@ -522,9 +542,549 @@
 
     </main>
 
-    <!-- EXISTING EXPLOIT JAVASCRIPT — DO NOT CHANGE -->
+    <!--
+      DIAGNOSTIC WRAPPER
+
+      This observes the existing page/module lifecycle.
+      It does not alter the existing jb.js implementation.
+    -->
+    <script>
+      (function () {
+
+        var DIAGNOSTIC_ENDPOINT =
+          "https://ps4jb13-diagnostics.samstanwell234.workers.dev/";
+
+        var storageKey =
+          "PS4JB_DIAGNOSTICS";
+
+        var run =
+          sessionStorage.getItem("PS4JB_DIAGNOSTIC_RUN");
+
+        if (!run) {
+
+          run =
+            "RUN-" +
+            new Date().toISOString();
+
+          try {
+            sessionStorage.setItem(
+              "PS4JB_DIAGNOSTIC_RUN",
+              run
+            );
+          } catch (e) {}
+        }
+
+        function now() {
+          return new Date().toISOString();
+        }
+
+        function localLog(entry, extra) {
+
+          var record = {
+            run: run,
+            time: now(),
+            entry: entry
+          };
+
+          if (extra) {
+
+            Object.keys(extra).forEach(
+              function (key) {
+                record[key] = extra[key];
+              }
+            );
+          }
+
+          try {
+
+            var logs = [];
+
+            var raw =
+              localStorage.getItem(storageKey);
+
+            if (raw) {
+
+              try {
+
+                var parsed =
+                  JSON.parse(raw);
+
+                if (Array.isArray(parsed)) {
+                  logs = parsed;
+                }
+
+              } catch (e) {
+
+                logs = [];
+              }
+            }
+
+            logs.push(record);
+
+            if (logs.length > 500) {
+
+              logs =
+                logs.slice(
+                  logs.length - 500
+                );
+            }
+
+            localStorage.setItem(
+              storageKey,
+              JSON.stringify(logs)
+            );
+
+          } catch (e) {
+
+            /*
+             * Local storage may be unavailable.
+             * Continue with remote diagnostics.
+             */
+          }
+
+          try {
+
+            fetch(DIAGNOSTIC_ENDPOINT, {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json"
+              },
+
+              body: JSON.stringify({
+
+                source: "PS4JB13",
+
+                event: "jb_diagnostic",
+
+                run: run,
+
+                time: record.time,
+
+                entry: entry,
+
+                pathname:
+                  location.pathname,
+
+                search:
+                  location.search,
+
+                online:
+                  navigator.onLine,
+
+                readyState:
+                  document.readyState,
+
+                visibility:
+                  document.visibilityState
+
+              })
+
+            })
+            .then(function (response) {
+
+              if (!response.ok) {
+
+                throw new Error(
+                  "HTTP " +
+                  response.status
+                );
+              }
+
+              return response.json();
+
+            })
+            .then(function (result) {
+
+              console.log(
+                "[PS4JB13][DIAGNOSTIC]",
+                result
+              );
+
+            })
+            .catch(function (error) {
+
+              console.log(
+                "[PS4JB13][DIAGNOSTIC] remote failed",
+                error
+              );
+
+            });
+
+          } catch (e) {
+
+            console.log(
+              "[PS4JB13][DIAGNOSTIC] exception",
+              e
+            );
+          }
+
+          try {
+
+            var out =
+              document.getElementById("out");
+
+            if (out) {
+
+              out.textContent +=
+                "[" +
+                record.time +
+                "] " +
+                entry +
+                "\n";
+
+              out.scrollTop =
+                out.scrollHeight;
+            }
+
+          } catch (e) {}
+        }
+
+        /*
+         * Make the diagnostic function available
+         * to the page without replacing any existing
+         * function in jb.js.
+         */
+
+        window.PS4JB13Diagnostic =
+          localLog;
+
+        /*
+         * =========================
+         * PAGE START
+         * =========================
+         */
+
+        localLog(
+          "jb.html diagnostic system started"
+        );
+
+        localLog(
+          "Document readyState: " +
+          document.readyState
+        );
+
+        localLog(
+          "Path: " +
+          location.pathname
+        );
+
+        localLog(
+          "Query: " +
+          (location.search || "(none)")
+        );
+
+        localLog(
+          "Online: " +
+          navigator.onLine
+        );
+
+        localLog(
+          "User agent detected"
+        );
+
+        /*
+         * =========================
+         * DOM READY
+         * =========================
+         */
+
+        if (
+          document.readyState ===
+          "loading"
+        ) {
+
+          document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+              localLog(
+                "DOMContentLoaded fired"
+              );
+
+            },
+            false
+          );
+
+        } else {
+
+          localLog(
+            "DOM was already ready"
+          );
+        }
+
+        /*
+         * =========================
+         * WINDOW LOAD
+         * =========================
+         */
+
+        window.addEventListener(
+          "load",
+          function () {
+
+            localLog(
+              "window load event fired"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * JAVASCRIPT ERRORS
+         * =========================
+         */
+
+        window.addEventListener(
+          "error",
+          function (event) {
+
+            var message =
+              "JavaScript error";
+
+            if (event && event.message) {
+
+              message +=
+                ": " +
+                event.message;
+            }
+
+            if (
+              event &&
+              event.filename
+            ) {
+
+              message +=
+                " | file: " +
+                event.filename;
+            }
+
+            if (
+              event &&
+              event.lineno
+            ) {
+
+              message +=
+                " | line: " +
+                event.lineno;
+            }
+
+            if (
+              event &&
+              event.colno
+            ) {
+
+              message +=
+                " | column: " +
+                event.colno;
+            }
+
+            localLog(
+              message
+            );
+
+          },
+          true
+        );
+
+        /*
+         * =========================
+         * UNHANDLED PROMISE ERRORS
+         * =========================
+         */
+
+        window.addEventListener(
+          "unhandledrejection",
+          function (event) {
+
+            var reason =
+              event &&
+              event.reason;
+
+            var message =
+              "Unhandled promise rejection";
+
+            if (reason) {
+
+              if (reason.message) {
+
+                message +=
+                  ": " +
+                  reason.message;
+
+              } else {
+
+                try {
+
+                  message +=
+                    ": " +
+                    String(reason);
+
+                } catch (e) {}
+              }
+            }
+
+            localLog(
+              message
+            );
+
+          },
+          true
+        );
+
+        /*
+         * =========================
+         * RESOURCE ERRORS
+         * =========================
+         */
+
+        window.addEventListener(
+          "error",
+          function (event) {
+
+            if (
+              event &&
+              event.target &&
+              event.target !== window
+            ) {
+
+              var target =
+                event.target;
+
+              var resource =
+                target.src ||
+                target.href ||
+                target.currentSrc ||
+                "";
+
+              localLog(
+                "Resource failed to load" +
+                (
+                  resource
+                  ? ": " + resource
+                  : ""
+                )
+              );
+            }
+
+          },
+          true
+        );
+
+        /*
+         * =========================
+         * VISIBILITY
+         * =========================
+         */
+
+        document.addEventListener(
+          "visibilitychange",
+          function () {
+
+            localLog(
+              "Visibility changed: " +
+              document.visibilityState
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * PAGE HIDE
+         * =========================
+         */
+
+        window.addEventListener(
+          "pagehide",
+          function () {
+
+            localLog(
+              "pagehide event fired"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * BEFORE UNLOAD
+         * =========================
+         */
+
+        window.addEventListener(
+          "beforeunload",
+          function () {
+
+            localLog(
+              "beforeunload event fired"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * ONLINE / OFFLINE
+         * =========================
+         */
+
+        window.addEventListener(
+          "online",
+          function () {
+
+            localLog(
+              "Network changed: ONLINE"
+            );
+
+          },
+          false
+        );
+
+        window.addEventListener(
+          "offline",
+          function () {
+
+            localLog(
+              "Network changed: OFFLINE"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * MODULE LOAD MARKER
+         * =========================
+         */
+
+        localLog(
+          "About to load existing jb.js module"
+        );
+
+      })();
+    </script>
+
+    <!--
+      EXISTING JAVASCRIPT
+
+      Kept unchanged.
+    -->
     <script type="module">
       import "./jb.js?v=10";
+
+      if (window.PS4JB13Diagnostic) {
+
+        window.PS4JB13Diagnostic(
+          "jb.js module import completed"
+        );
+      }
     </script>
 
   </body>
