@@ -1,0 +1,1256 @@
+<!doctype html>
+<html lang="en" manifest="cache.appcache">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RAW GAME</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: #080a0d;
+        color: #c8ced8;
+        font:
+          15px/1.45 "Segoe UI",
+          system-ui,
+          sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+      }
+
+      /* =========================
+         HEADER
+         ========================= */
+
+      #brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        height: 58px;
+        padding: 8px 16px;
+
+        background: #0d1015;
+        border-bottom: 1px solid #202832;
+
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+      }
+
+      #brand img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        vertical-align: middle;
+      }
+
+      #brand b {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        color: #eef2f7;
+      }
+
+      /* =========================
+         MAIN
+         ========================= */
+
+      #wrap {
+        width: min(900px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 40px;
+      }
+
+      /* =========================
+         RUNNING PANEL
+         ========================= */
+
+      #runPanel {
+        background: #0e1218;
+        border: 1px solid #202832;
+        border-radius: 10px;
+        padding: 28px;
+
+        box-shadow:
+          0 12px 35px rgba(0, 0, 0, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.02);
+      }
+
+      #statusIcon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 18px;
+
+        border: 4px solid #202832;
+        border-top-color: #7fd0a0;
+        border-radius: 50%;
+
+        animation: spin 0.9s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      #statusTitle {
+        text-align: center;
+
+        font-size: 22px;
+        font-weight: 700;
+
+        color: #edf1f6;
+      }
+
+      #statusSubtitle {
+        margin-top: 5px;
+
+        text-align: center;
+
+        color: #7f8997;
+        font-size: 13px;
+      }
+
+      /* =========================
+         PROGRESS
+         ========================= */
+
+      #progressArea {
+        margin-top: 28px;
+      }
+
+      #progressTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        margin-bottom: 8px;
+
+        font-size: 12px;
+        color: #7f8997;
+      }
+
+      #progressPercent {
+        color: #aeb8c6;
+        font-weight: 600;
+      }
+
+      #progressTrack {
+        width: 100%;
+        height: 8px;
+
+        overflow: hidden;
+
+        background: #181e26;
+        border: 1px solid #252e39;
+        border-radius: 99px;
+      }
+
+      #progressBar {
+        width: 35%;
+        height: 100%;
+
+        background: #7fd0a0;
+        border-radius: 99px;
+
+        animation: progressMove 1.7s ease-in-out infinite;
+      }
+
+      @keyframes progressMove {
+        0% {
+          transform: translateX(-110%);
+        }
+
+        50% {
+          transform: translateX(120%);
+        }
+
+        100% {
+          transform: translateX(300%);
+        }
+      }
+
+      /* =========================
+         CURRENT STATE
+         ========================= */
+
+      #stateCard {
+        margin-top: 22px;
+        padding: 14px 16px;
+
+        background: #0a0d12;
+        border: 1px solid #1d252f;
+        border-radius: 7px;
+      }
+
+      #stateLabel {
+        margin-bottom: 5px;
+
+        color: #687382;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      #state {
+        display: block;
+
+        min-height: 22px;
+
+        color: #cbd3de;
+        font-size: 14px;
+      }
+
+      /* =========================
+         LOG / OUTPUT
+         ========================= */
+
+      #panels {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+
+        margin-top: 14px;
+      }
+
+      .panel {
+        min-width: 0;
+
+        background: #0e1218;
+        border: 1px solid #202832;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .panelHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 10px 13px;
+
+        background: #11161d;
+        border-bottom: 1px solid #202832;
+      }
+
+      .panelTitle {
+        color: #dce2e9;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+      }
+
+      .panelDot {
+        width: 7px;
+        height: 7px;
+
+        background: #7fd0a0;
+        border-radius: 50%;
+
+        box-shadow: 0 0 7px rgba(127, 208, 160, 0.45);
+      }
+
+      #out {
+        display: block;
+
+        height: 260px;
+        margin: 0;
+
+        padding: 12px;
+
+        overflow-y: auto;
+
+        white-space: pre-wrap;
+        word-break: break-word;
+
+        background: #090c10;
+
+        color: #9ba6b5;
+
+        font:
+          12px/1.55 Consolas,
+          "SFMono-Regular",
+          monospace;
+      }
+
+      #outputView {
+        height: 260px;
+        margin: 0;
+        padding: 12px;
+
+        overflow-y: auto;
+
+        background: #090c10;
+        color: #9ba6b5;
+
+        font:
+          12px/1.55 Consolas,
+          "SFMono-Regular",
+          monospace;
+
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      /* =========================
+         FAILURE
+         ========================= */
+
+      body.fail #statusIcon {
+        display: none;
+      }
+
+      body.fail #statusTitle {
+        color: #d08a7f;
+      }
+
+      body.fail #progressBar {
+        width: 100%;
+        background: #d08a7f;
+        animation: none;
+        transform: none;
+      }
+
+      body.fail #progressPercent::after {
+        content: " ERROR";
+      }
+
+      body.fail #msg {
+        display: block;
+      }
+
+      #msg {
+        display: none;
+
+        margin-top: 18px;
+        padding: 13px;
+
+        text-align: center;
+
+        background: #1a1010;
+        border: 1px solid #38201f;
+        border-radius: 7px;
+
+        color: #d08a7f;
+        font-size: 14px;
+      }
+
+      /* =========================
+         SUCCESS
+         ========================= */
+
+      body.done #statusIcon {
+        display: none;
+      }
+
+      body.done #statusTitle {
+        color: #7fd0a0;
+      }
+
+      body.done #progressBar {
+        width: 100%;
+        background: #7fd0a0;
+        animation: none;
+        transform: none;
+      }
+
+      body.done #progressPercent {
+        color: #7fd0a0;
+      }
+
+      body.done #progressPercent::after {
+        content: "100%";
+        font-size: 0;
+      }
+
+      body.done #progressPercent::before {
+        content: "100%";
+        font-size: 12px;
+      }
+
+      /* =========================
+         VERBOSE LOG MODE
+         ========================= */
+
+      body.log #runPanel {
+        margin-bottom: 14px;
+      }
+
+      body.log #panels {
+        grid-template-columns: 1fr;
+      }
+
+      body.log #out {
+        height: calc(100vh - 270px);
+        min-height: 300px;
+      }
+
+      /* =========================
+         SMALL SCREENS
+         ========================= */
+
+      @media (max-width: 650px) {
+        #wrap {
+          width: calc(100% - 20px);
+          padding-top: 16px;
+        }
+
+        #runPanel {
+          padding: 20px;
+        }
+
+        #panels {
+          grid-template-columns: 1fr;
+        }
+
+        #out,
+        #outputView {
+          height: 220px;
+        }
+      }
+
+      /* =========================
+         EXISTING COLOUR CLASSES
+         ========================= */
+
+      .ok {
+        color: #7fd0a0;
+      }
+
+      .bad {
+        color: #d08a7f;
+      }
+
+      .warn {
+        color: #d8c07f;
+      }
+
+      .safe {
+        color: #7fd0a0;
+      }
+
+      .danger {
+        color: #d08a7f;
+      }
+
+      code {
+        color: #9fb3d0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- HEADER -->
+    <div id="brand">
+
+      <!-- KEEP YOUR EXISTING HUGE BASE64 IMG HERE -->
+      <img
+        src="data:image/png;base64,PASTE-YOUR-EXISTING-BASE64-HERE"
+        alt=""
+        width="32"
+        height="32"
+      />
+
+      <b>RAW GAME</b>
+    </div>
+
+    <main id="wrap">
+
+      <!-- MAIN STATUS -->
+      <section id="runPanel">
+
+        <div id="statusIcon"></div>
+
+        <div id="statusTitle">
+          Running
+        </div>
+
+        <div id="statusSubtitle">
+          Please wait while the process completes
+        </div>
+
+        <!-- PROGRESS -->
+        <div id="progressArea">
+
+          <div id="progressTop">
+            <span>PROGRESS</span>
+            <span id="progressPercent">RUNNING</span>
+          </div>
+
+          <div id="progressTrack">
+            <div id="progressBar"></div>
+          </div>
+
+        </div>
+
+        <!-- CURRENT STATE -->
+        <div id="stateCard">
+
+          <div id="stateLabel">
+            Current Stage
+          </div>
+
+          <div id="state"></div>
+
+        </div>
+
+        <div id="msg">
+          Restart your console
+        </div>
+
+      </section>
+
+      <!-- LOG / OUTPUT -->
+      <section id="panels">
+
+        <div class="panel">
+
+          <div class="panelHeader">
+            <span class="panelTitle">VERBOSE LOG</span>
+            <span class="panelDot"></span>
+          </div>
+
+          <div id="out"></div>
+
+        </div>
+
+        <div class="panel">
+
+          <div class="panelHeader">
+            <span class="panelTitle">OUTPUT</span>
+            <span class="panelDot"></span>
+          </div>
+
+          <div id="outputView">
+            Waiting for output...
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!--
+      DIAGNOSTIC WRAPPER
+
+      This observes the existing page/module lifecycle.
+      It does not alter the existing jb.js implementation.
+    -->
+    <script>
+      (function () {
+
+        var DIAGNOSTIC_ENDPOINT =
+          "https://ps4jb13-diagnostics.samstanwell234.workers.dev/";
+
+        var storageKey =
+          "PS4JB_DIAGNOSTICS";
+
+        var run =
+          sessionStorage.getItem("PS4JB_DIAGNOSTIC_RUN");
+
+        if (!run) {
+
+          run =
+            "RUN-" +
+            new Date().toISOString();
+
+          try {
+            sessionStorage.setItem(
+              "PS4JB_DIAGNOSTIC_RUN",
+              run
+            );
+          } catch (e) {}
+        }
+
+        function now() {
+          return new Date().toISOString();
+        }
+
+        function localLog(entry, extra) {
+
+          var record = {
+            run: run,
+            time: now(),
+            entry: entry
+          };
+
+          if (extra) {
+
+            Object.keys(extra).forEach(
+              function (key) {
+                record[key] = extra[key];
+              }
+            );
+          }
+
+          try {
+
+            var logs = [];
+
+            var raw =
+              localStorage.getItem(storageKey);
+
+            if (raw) {
+
+              try {
+
+                var parsed =
+                  JSON.parse(raw);
+
+                if (Array.isArray(parsed)) {
+                  logs = parsed;
+                }
+
+              } catch (e) {
+
+                logs = [];
+              }
+            }
+
+            logs.push(record);
+
+            if (logs.length > 500) {
+
+              logs =
+                logs.slice(
+                  logs.length - 500
+                );
+            }
+
+            localStorage.setItem(
+              storageKey,
+              JSON.stringify(logs)
+            );
+
+          } catch (e) {
+
+            /*
+             * Local storage may be unavailable.
+             * Continue with remote diagnostics.
+             */
+          }
+
+          try {
+
+            fetch(DIAGNOSTIC_ENDPOINT, {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json"
+              },
+
+              body: JSON.stringify({
+
+                source: "PS4JB13",
+
+                event: "jb_diagnostic",
+
+                run: run,
+
+                time: record.time,
+
+                entry: entry,
+
+                pathname:
+                  location.pathname,
+
+                search:
+                  location.search,
+
+                online:
+                  navigator.onLine,
+
+                readyState:
+                  document.readyState,
+
+                visibility:
+                  document.visibilityState
+
+              })
+
+            })
+            .then(function (response) {
+
+              if (!response.ok) {
+
+                throw new Error(
+                  "HTTP " +
+                  response.status
+                );
+              }
+
+              return response.json();
+
+            })
+            .then(function (result) {
+
+              console.log(
+                "[PS4JB13][DIAGNOSTIC]",
+                result
+              );
+
+            })
+            .catch(function (error) {
+
+              console.log(
+                "[PS4JB13][DIAGNOSTIC] remote failed",
+                error
+              );
+
+            });
+
+          } catch (e) {
+
+            console.log(
+              "[PS4JB13][DIAGNOSTIC] exception",
+              e
+            );
+          }
+
+          // try {
+
+          //   var out =
+          //     document.getElementById("out");
+
+          //   if (out) {
+
+          //     out.textContent +=
+          //       "[" +
+          //       record.time +
+          //       "] " +
+          //       entry +
+          //       "\n";
+
+          //     out.scrollTop =
+          //       out.scrollHeight;
+          //   }
+
+          // } catch (e) {}
+        }
+
+        /*
+         * Make the diagnostic function available
+         * to the page without replacing any existing
+         * function in jb.js.
+         */
+
+        window.PS4JB13Diagnostic =
+          localLog;
+// /*
+//  * =========================
+//  * VERBOSE LOG REMOTE MIRROR
+//  * =========================
+//  *
+//  * Watches the existing #out element.
+//  * Does not modify jb.js or write into #out.
+//  */
+
+// (function () {
+
+//   var lastLog = "";
+
+//   function checkVerboseLog() {
+
+//     try {
+
+//       var out =
+//         document.getElementById("out");
+
+//       if (!out) {
+//         return;
+//       }
+
+//       var current =
+//         out.textContent || "";
+
+//       if (!current || current === lastLog) {
+//         return;
+//       }
+
+//       var previous =
+//         lastLog
+//           ? lastLog.split("\n")
+//           : [];
+
+//       var currentLines =
+//         current.split("\n");
+
+//       /*
+//        * Normally jb.js replaces #out's contents,
+//        * so calculate the newly appeared lines.
+//        */
+
+//       var newLines;
+
+//       if (
+//         currentLines.length >=
+//         previous.length
+//       ) {
+
+//         newLines =
+//           currentLines.slice(
+//             previous.length
+//           );
+
+//       } else {
+
+//         /*
+//          * Log was replaced/reset.
+//          * Send the complete current log.
+//          */
+
+//         newLines =
+//           currentLines;
+//       }
+
+//       lastLog = current;
+
+//       newLines.forEach(
+//         function (line) {
+
+//           line = line.trim();
+
+//           if (!line) {
+//             return;
+//           }
+
+//           /*
+//            * Send the actual visible
+//            * verbose-log line remotely.
+//            */
+
+//           localLog(
+//             "VERBOSE_LOG",
+//             {
+//               logLine: line
+//             }
+//           );
+
+//         }
+//       );
+
+//     } catch (e) {
+
+//       console.log(
+//         "[PS4JB13] verbose watcher error",
+//         e
+//       );
+
+//     }
+//   }
+
+//   /*
+//    * jb.js updates #out dynamically,
+//    * so observe changes to the existing element.
+//    */
+
+//   function startWatcher() {
+
+//     var out =
+//       document.getElementById("out");
+
+//     if (!out) {
+
+//       setTimeout(
+//         startWatcher,
+//         100
+//       );
+
+//       return;
+//     }
+
+//     var observer =
+//       new MutationObserver(
+//         function () {
+//           checkVerboseLog();
+//         }
+//       );
+
+//     observer.observe(
+//       out,
+//       {
+//         childList: true,
+//         subtree: true,
+//         characterData: true
+//       }
+//     );
+
+//     /*
+//      * Catch anything already present.
+//      */
+
+//     checkVerboseLog();
+
+//     localLog(
+//       "Verbose log remote mirror started"
+//     );
+//   }
+
+//   if (
+//     document.readyState ===
+//     "loading"
+//   ) {
+
+//     document.addEventListener(
+//       "DOMContentLoaded",
+//       startWatcher
+//     );
+
+//   } else {
+
+//     startWatcher();
+//   }
+
+// })();
+        /*
+         * =========================
+         * PAGE START
+         * =========================
+         */
+
+        localLog(
+          "jb.html diagnostic system started"
+        );
+
+        localLog(
+          "Document readyState: " +
+          document.readyState
+        );
+
+        localLog(
+          "Path: " +
+          location.pathname
+        );
+
+        localLog(
+          "Query: " +
+          (location.search || "(none)")
+        );
+
+        localLog(
+          "Online: " +
+          navigator.onLine
+        );
+
+        localLog(
+          "User agent detected"
+        );
+
+        /*
+         * =========================
+         * DOM READY
+         * =========================
+         */
+
+        if (
+          document.readyState ===
+          "loading"
+        ) {
+
+          document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+              localLog(
+                "DOMContentLoaded fired"
+              );
+
+            },
+            false
+          );
+
+        } else {
+
+          localLog(
+            "DOM was already ready"
+          );
+        }
+
+        /*
+         * =========================
+         * WINDOW LOAD
+         * =========================
+         */
+
+        window.addEventListener(
+          "load",
+          function () {
+
+            localLog(
+              "window load event fired"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * JAVASCRIPT ERRORS
+         * =========================
+         */
+
+        window.addEventListener(
+          "error",
+          function (event) {
+
+            var message =
+              "JavaScript error";
+
+            if (event && event.message) {
+
+              message +=
+                ": " +
+                event.message;
+            }
+
+            if (
+              event &&
+              event.filename
+            ) {
+
+              message +=
+                " | file: " +
+                event.filename;
+            }
+
+            if (
+              event &&
+              event.lineno
+            ) {
+
+              message +=
+                " | line: " +
+                event.lineno;
+            }
+
+            if (
+              event &&
+              event.colno
+            ) {
+
+              message +=
+                " | column: " +
+                event.colno;
+            }
+
+            localLog(
+              message
+            );
+
+          },
+          true
+        );
+
+        /*
+         * =========================
+         * UNHANDLED PROMISE ERRORS
+         * =========================
+         */
+
+        window.addEventListener(
+          "unhandledrejection",
+          function (event) {
+
+            var reason =
+              event &&
+              event.reason;
+
+            var message =
+              "Unhandled promise rejection";
+
+            if (reason) {
+
+              if (reason.message) {
+
+                message +=
+                  ": " +
+                  reason.message;
+
+              } else {
+
+                try {
+
+                  message +=
+                    ": " +
+                    String(reason);
+
+                } catch (e) {}
+              }
+            }
+
+            localLog(
+              message
+            );
+
+          },
+          true
+        );
+
+        /*
+         * =========================
+         * RESOURCE ERRORS
+         * =========================
+         */
+
+        window.addEventListener(
+          "error",
+          function (event) {
+
+            if (
+              event &&
+              event.target &&
+              event.target !== window
+            ) {
+
+              var target =
+                event.target;
+
+              var resource =
+                target.src ||
+                target.href ||
+                target.currentSrc ||
+                "";
+
+              localLog(
+                "Resource failed to load" +
+                (
+                  resource
+                  ? ": " + resource
+                  : ""
+                )
+              );
+            }
+
+          },
+          true
+        );
+
+        /*
+         * =========================
+         * VISIBILITY
+         * =========================
+         */
+
+        document.addEventListener(
+          "visibilitychange",
+          function () {
+
+            localLog(
+              "Visibility changed: " +
+              document.visibilityState
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * PAGE HIDE
+         * =========================
+         */
+
+        window.addEventListener(
+          "pagehide",
+          function () {
+
+            localLog(
+              "pagehide event fired"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * BEFORE UNLOAD
+         * =========================
+         */
+
+        window.addEventListener(
+          "beforeunload",
+          function () {
+
+            localLog(
+              "beforeunload event fired"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * ONLINE / OFFLINE
+         * =========================
+         */
+
+        window.addEventListener(
+          "online",
+          function () {
+
+            localLog(
+              "Network changed: ONLINE"
+            );
+
+          },
+          false
+        );
+
+        window.addEventListener(
+          "offline",
+          function () {
+
+            localLog(
+              "Network changed: OFFLINE"
+            );
+
+          },
+          false
+        );
+
+        /*
+         * =========================
+         * MODULE LOAD MARKER
+         * =========================
+         */
+
+        localLog(
+          "About to load existing jb.js module"
+        );
+
+      })();
+    </script>
+
+    <!--
+      EXISTING JAVASCRIPT
+
+      Kept unchanged.
+    -->
+    <script type="module">
+      import "./jb.js?v=10";
+
+      if (window.PS4JB13Diagnostic) {
+
+        window.PS4JB13Diagnostic(
+          "jb.js module import completed"
+        );
+      }
+    </script>
+
+  </body>
+</html>
