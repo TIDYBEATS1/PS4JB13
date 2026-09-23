@@ -1,0 +1,18 @@
+{
+  "source": "PS4JB13",
+  "event": "launcher_loaded",
+  "firmware": null,
+  "firmwareNumber": null,
+  "supported": false,
+  "online": true,
+  "language": "en-US@posix",
+  "screen": {
+    "width": 1920,
+    "height": 1080
+  },
+  "location": {
+    "pathname": "/PS4JB13/",
+    "search": ""
+  },
+  "timestamp": "2026-09-23T00:32:35.505Z"
+}
