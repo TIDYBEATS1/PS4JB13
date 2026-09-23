@@ -1,0 +1,12 @@
+{
+  "source": "PS4JB13",
+  "event": "jb_diagnostic",
+  "run": "RUN-2026-09-23T01:20:09.859Z",
+  "time": "2026-09-23T01:20:19.016Z",
+  "entry": "Visibility changed: hidden",
+  "pathname": "/PS4JB13/jb.html",
+  "search": "?verbose=1&log=1",
+  "online": true,
+  "readyState": "complete",
+  "visibility": "hidden"
+}
