@@ -541,7 +541,10 @@ body.error #action {
 
 <script>
 (function () {
-    function saveLocalDiagnostic(entry) {
+    var diagnosticRun =
+    "RUN-" + new Date().toISOString();
+
+function saveLocalDiagnostic(entry) {
     try {
         var key = "PS4JB_DIAGNOSTICS";
         var logs = [];
@@ -551,6 +554,7 @@ body.error #action {
         if (raw) {
             try {
                 var parsed = JSON.parse(raw);
+
                 if (Array.isArray(parsed)) {
                     logs = parsed;
                 }
@@ -560,7 +564,7 @@ body.error #action {
         }
 
         logs.push({
-            run: "RUN-" + new Date().toISOString(),
+            run: diagnosticRun,
             time: new Date().toISOString(),
             entry: entry
         });
@@ -569,9 +573,20 @@ body.error #action {
             logs = logs.slice(logs.length - 200);
         }
 
-        localStorage.setItem(key, JSON.stringify(logs));
+        localStorage.setItem(
+            key,
+            JSON.stringify(logs)
+        );
+
+        return true;
+
     } catch (e) {
-        // Ignore localStorage errors
+        console.log(
+            "[PS4JB13] Local diagnostic failed:",
+            e
+        );
+
+        return false;
     }
 }
 
