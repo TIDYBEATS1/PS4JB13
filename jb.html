@@ -719,25 +719,25 @@
             );
           }
 
-          try {
+          // try {
 
-            var out =
-              document.getElementById("out");
+          //   var out =
+          //     document.getElementById("out");
 
-            if (out) {
+          //   if (out) {
 
-              out.textContent +=
-                "[" +
-                record.time +
-                "] " +
-                entry +
-                "\n";
+          //     out.textContent +=
+          //       "[" +
+          //       record.time +
+          //       "] " +
+          //       entry +
+          //       "\n";
 
-              out.scrollTop =
-                out.scrollHeight;
-            }
+          //     out.scrollTop =
+          //       out.scrollHeight;
+          //   }
 
-          } catch (e) {}
+          // } catch (e) {}
         }
 
         /*
@@ -748,7 +748,172 @@
 
         window.PS4JB13Diagnostic =
           localLog;
+// /*
+//  * =========================
+//  * VERBOSE LOG REMOTE MIRROR
+//  * =========================
+//  *
+//  * Watches the existing #out element.
+//  * Does not modify jb.js or write into #out.
+//  */
 
+// (function () {
+
+//   var lastLog = "";
+
+//   function checkVerboseLog() {
+
+//     try {
+
+//       var out =
+//         document.getElementById("out");
+
+//       if (!out) {
+//         return;
+//       }
+
+//       var current =
+//         out.textContent || "";
+
+//       if (!current || current === lastLog) {
+//         return;
+//       }
+
+//       var previous =
+//         lastLog
+//           ? lastLog.split("\n")
+//           : [];
+
+//       var currentLines =
+//         current.split("\n");
+
+//       /*
+//        * Normally jb.js replaces #out's contents,
+//        * so calculate the newly appeared lines.
+//        */
+
+//       var newLines;
+
+//       if (
+//         currentLines.length >=
+//         previous.length
+//       ) {
+
+//         newLines =
+//           currentLines.slice(
+//             previous.length
+//           );
+
+//       } else {
+
+//         /*
+//          * Log was replaced/reset.
+//          * Send the complete current log.
+//          */
+
+//         newLines =
+//           currentLines;
+//       }
+
+//       lastLog = current;
+
+//       newLines.forEach(
+//         function (line) {
+
+//           line = line.trim();
+
+//           if (!line) {
+//             return;
+//           }
+
+//           /*
+//            * Send the actual visible
+//            * verbose-log line remotely.
+//            */
+
+//           localLog(
+//             "VERBOSE_LOG",
+//             {
+//               logLine: line
+//             }
+//           );
+
+//         }
+//       );
+
+//     } catch (e) {
+
+//       console.log(
+//         "[PS4JB13] verbose watcher error",
+//         e
+//       );
+
+//     }
+//   }
+
+//   /*
+//    * jb.js updates #out dynamically,
+//    * so observe changes to the existing element.
+//    */
+
+//   function startWatcher() {
+
+//     var out =
+//       document.getElementById("out");
+
+//     if (!out) {
+
+//       setTimeout(
+//         startWatcher,
+//         100
+//       );
+
+//       return;
+//     }
+
+//     var observer =
+//       new MutationObserver(
+//         function () {
+//           checkVerboseLog();
+//         }
+//       );
+
+//     observer.observe(
+//       out,
+//       {
+//         childList: true,
+//         subtree: true,
+//         characterData: true
+//       }
+//     );
+
+//     /*
+//      * Catch anything already present.
+//      */
+
+//     checkVerboseLog();
+
+//     localLog(
+//       "Verbose log remote mirror started"
+//     );
+//   }
+
+//   if (
+//     document.readyState ===
+//     "loading"
+//   ) {
+
+//     document.addEventListener(
+//       "DOMContentLoaded",
+//       startWatcher
+//     );
+
+//   } else {
+
+//     startWatcher();
+//   }
+
+// })();
         /*
          * =========================
          * PAGE START
